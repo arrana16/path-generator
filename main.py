@@ -92,6 +92,59 @@ def linVelGen(distance, maxDistance, maxVel, accel):
 
     return velocity
 
+def curvatureCalc(t, P0, P1, P2, P3):
+    vel = np.array([
+        [0, 1, 2*t, 3*(t**2)]
+    ])
+    accel = np.array([
+        [0, 0, 2, 6*t]
+    ])
+    b= np.array([
+        [1, 0, 0, 0],
+        [-3, 3, 0, 0],
+        [3, -3, 6, 0],
+        [1, 3, -3, 1]
+    ])
+    xVals= np.array([
+        [P0[0]/60],
+        [P1[0]/60],
+        [P2[0]/60],
+        [P3[0]/60]
+    ])
+    yVals = np.array([
+        [P0[1]/60],
+        [P1[1]/60],
+        [P2[1]/60],
+        [P3[1]/60]
+    ])
+    xVel = np.matmul(vel, b)
+    xVel = np.matmul(xVel, xVals)[0][0]
+
+    xAccel = np.matmul(accel, b)
+    xAccel = np.matmul(xAccel, xVals)[0][0]
+
+    yVel = np.matmul(vel, b)
+    yVel = np.matmul(yVel, yVals)[0][0]
+
+    yAccel = np.matmul(accel, b)
+    yAccel = np.matmul(yAccel, yVals)[0][0]
+    # xProduct = np.matmul(b, xVals)
+    # yProduct = np.matmul(b, yVals)
+
+    # xVel = np.matmul(xProduct, vel)
+    # yVel = np.matmul(yProduct, vel)
+
+    # xAccel = np.matmul(xProduct, accel)
+    # yAccel = np.matmul(yProduct, accel)
+
+    derMatrix = np.array([
+        [xVel, xAccel],
+        [yVel, yAccel]
+    ])
+
+    curvature = np.linalg.det(derMatrix)/((math.sqrt(xVel**2+yVel**2))**3)
+    print(1/curvature)
+    # print(curvature)
 def graphVel(distance, maxVel):
     x = np.linspace(0, distance, 200)
     y = []
@@ -247,6 +300,7 @@ while run:
         if compute.click():
             distance = distanceCalc()
             graphVel(distance, maxVel)
+            curvatureCalc(0.5, points[0][1], points[0][0], points[1][0], points[1][1])
         if event.type == pygame.MOUSEBUTTONUP:
             activeCircle=None
     
