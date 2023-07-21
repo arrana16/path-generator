@@ -64,14 +64,18 @@ def valueCalculate(t, P0, P1, P2, P3):
     return result
 
 def distanceCalc():
-    start = time.time()
-    distance = 0
+    totaldistance = 0
+    segmentDistance = []
     for i in range(len(pointsList)-1):
         segLength = math.sqrt((pointsList[i][0]-pointsList[i+1][0])**2+(pointsList[i][1]-pointsList[i+1][1])**2)
-        distance+=segLength
-    distance /= 60
-    end = time.time()
-    return distance
+        totaldistance+=segLength
+        if (i+2)%1000==0:
+            segmentDistance.append((totaldistance/60))
+    totaldistance /= 60
+
+    for i in range(1, len(segmentDistance)):
+        segmentDistance[-i] = segmentDistance[-i]-segmentDistance[-i-1]
+    return totaldistance, segmentDistance
 
 def linVelGen(distance, maxDistance, maxVel, accel):
     slope = (76.576-3.828)/accel
@@ -142,25 +146,73 @@ def curvatureCalc(t, P0, P1, P2, P3):
         [yVel, yAccel]
     ])
 
-    curvature = np.linalg.det(derMatrix)/((math.sqrt(xVel**2+yVel**2))**3)
+    curvature = np.linalg.det(derMatrix)/((math.sqrt(xVel**2+yVel**2))**3)*12
     return curvature
 
-def graphVel(distance, maxVel):
-    x = np.linspace(0, distance, 200)
-    y = []
-    for i in range(len(x)):
-        y.append(linVelGen(x[i], distance, maxVel, 1.5))
+def trajectoryCalc(maxVel, accel):
+    timeStamps = []
+    angularVel = []
+    linearVel = []
+    t = 0
+    tim = 0
+    s = 0
+    dT = 0.010
 
+    totalDistance, segmentDistance = distanceCalc()
+
+    v = 0
+    w = 0
+    while t<len(points)-1:
+
+        v = linVelGen(s, totalDistance, maxVel, accel)
+        curvature = curvatureCalc(t%1, points[int(t//1)][1], points[int(t//1)][2], points[int(t//1)+1][0], points[int(t//1)+1][1])
+        w = curvature*v
+
+        if curvature == 0:
+            w = 0
+        else:
+            radius = 1/curvature
+            w = v*curvature
+
+            if curvature<0:
+                if 10.4*w+76.576>v:
+                    w = 76.576/(radius-10.4)
+                    v = w*radius
+            else:
+                if -10.4*w+76.576>v:
+                    w = 76.576/(radius+10.4)
+                    v = w*radius
+        
+        s+=(v*dT)/12
+        tim+=dT
+
+        t=s/segmentDistance[int(t//1)]
+        
+        timeStamps.append(tim)
+        angularVel.append(w)
+        linearVel.append(v)
+    graphVel(timeStamps, linearVel)
+
+
+
+
+
+
+
+
+def graphVel(x, y):
     fig, ax = plt.subplots()
     ax.plot(x, y)
     plt.show()
+
+
 
 
 WIDTH, HEIGHT = 1020, 720
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 
 maxAngularVel = 421.87
-maxAcel = 10
+accel = 1.5
 maxVel = 100
 
 pygame.font.init()
@@ -298,9 +350,7 @@ while run:
                     adjacentCompute(iVal, points)
 
         if compute.click():
-            distance = distanceCalc()
-            graphVel(distance, maxVel)
-            curvatureCalc(0.5, points[0][1], points[0][0], points[1][0], points[1][1])
+            trajectoryCalc(maxVel, accel)
         if event.type == pygame.MOUSEBUTTONUP:
             activeCircle=None
     
