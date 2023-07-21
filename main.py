@@ -102,8 +102,8 @@ def curvatureCalc(t, P0, P1, P2, P3):
     b= np.array([
         [1, 0, 0, 0],
         [-3, 3, 0, 0],
-        [3, -3, 6, 0],
-        [1, 3, -3, 1]
+        [3, -6, 3, 0],
+        [-1, 3, -3, 1]
     ])
     xVals= np.array([
         [P0[0]/60],
@@ -143,8 +143,8 @@ def curvatureCalc(t, P0, P1, P2, P3):
     ])
 
     curvature = np.linalg.det(derMatrix)/((math.sqrt(xVel**2+yVel**2))**3)
-    print(1/curvature)
-    # print(curvature)
+    return curvature
+
 def graphVel(distance, maxVel):
     x = np.linspace(0, distance, 200)
     y = []
