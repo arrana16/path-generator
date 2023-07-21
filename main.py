@@ -94,6 +94,9 @@ def linVelGen(distance, maxDistance, maxVel, accel):
     else:
         velocity = maxVel+(maxDistance-accelDistance-distance)*slope
 
+    if velocity<3.828:
+        velocity = 3.828
+
     return velocity
 
 def curvatureCalc(t, P0, P1, P2, P3):
@@ -146,7 +149,7 @@ def curvatureCalc(t, P0, P1, P2, P3):
         [yVel, yAccel]
     ])
 
-    curvature = np.linalg.det(derMatrix)/((math.sqrt(xVel**2+yVel**2))**3)*12
+    curvature = np.linalg.det(derMatrix)/((math.sqrt(xVel**2+yVel**2))**3)
     return curvature
 
 def trajectoryCalc(maxVel, accel):
@@ -156,41 +159,54 @@ def trajectoryCalc(maxVel, accel):
     t = 0
     tim = 0
     s = 0
+    ts = 0
     dT = 0.010
 
     totalDistance, segmentDistance = distanceCalc()
 
     v = 0
     w = 0
+
+    tCount = 0
+
     while t<len(points)-1:
 
         v = linVelGen(s, totalDistance, maxVel, accel)
         curvature = curvatureCalc(t%1, points[int(t//1)][1], points[int(t//1)][2], points[int(t//1)+1][0], points[int(t//1)+1][1])
-        w = curvature*v
+
 
         if curvature == 0:
             w = 0
         else:
-            radius = 1/curvature
-            w = v*curvature
+            radius = (1/curvature)*12
+            w = v/radius
 
-            if curvature<0:
-                if 10.4*w+76.576>v:
+            if radius<0:
+                if v>10.4*w+76.576:
                     w = 76.576/(radius-10.4)
                     v = w*radius
             else:
-                if -10.4*w+76.576>v:
+                if v>-10.4*w+76.576:
                     w = 76.576/(radius+10.4)
                     v = w*radius
-        
+
+
         s+=(v*dT)/12
+        ts+=(v*dT)/12
         tim+=dT
 
-        t=s/segmentDistance[int(t//1)]
+        if t-tCount>1:
+            tCount+=1
+            ts = 0
+            print(tCount)
+        
+        t=ts/segmentDistance[int(t//1)]+tCount
+        print(v)
         
         timeStamps.append(tim)
         angularVel.append(w)
         linearVel.append(v)
+    graphVel(timeStamps, angularVel)
     graphVel(timeStamps, linearVel)
 
 
