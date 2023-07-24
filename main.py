@@ -1,8 +1,9 @@
 import pygame
 import numpy as np
 import math
-import time
 import matplotlib.pyplot as plt
+import tkinter as tk
+from tkinter import filedialog
 
 # Button Class
 class Button:
@@ -262,6 +263,9 @@ def trajectoryCalc(maxVel, accel):
         linearVel.append(v)
 
     # Graph linear and angular vel
+    path.write(str(len(linearVel))+"\n")
+    path.write(str(linearVel)+"\n")
+    path.write(str(angularVel)+"\n")
     graphVel(timeStamps, linearVel, angularVel)
 
 # Plot angular and linear velocity
@@ -275,6 +279,11 @@ def graphVel(t, v, w):
 
     plt.show()
 
+
+print("Enter a name for your path")
+name = input()
+
+path = open(f"paths/{name}.txt", "w")
 # CONSTANTS
 maxAngularVel = 7.363
 maxLinVel = 76.576

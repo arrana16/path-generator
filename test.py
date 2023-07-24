@@ -1,1 +1,3 @@
-print(0.1%1)
+path = open("paths/a.txt", "r")
+
+a = path.readlines()
