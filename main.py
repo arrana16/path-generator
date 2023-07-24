@@ -281,7 +281,7 @@ maxLinVel = 76.576
 accel = 1.5
 maxVel = 100
 
-
+# Render window
 WIDTH, HEIGHT = 1020, 720
 WIN = pygame.display.set_mode((WIDTH, HEIGHT))
 
@@ -296,34 +296,46 @@ run = True
 bg = pygame.image.load("Vex Field.png")
 
 
-
+# Spline points
 splinePoints = []
 
+# Variable for which point to mmove
 activeCircle = None
+coordinateEdit = 0
+
+# Waypoint or Control Point
 circleType = ""
 
+# Starting control points and generate a spline
 points = [[[150, 300], [50, 300], [150, 300], False], [[200, 50], [300, 50], [200, 50], False]]
 newCompute(points[0][1], points[0][0], points[1][0], points[1][1])
 
-coordinateEdit = 0
+# Change x value
 xChange = False
 setX = ""
 
+# Change y value
 yChange = False
 setY = ""
 
+# Change velocity
 velChange = False
 setVel = ""
 
+# Set x, y, velocity and compute buttons
 xVal = Button((750, 80), f'x: {round(points[coordinateEdit][1][0]/60,2)}')
 yVal = Button((750, 110), f'y: {round((720-points[coordinateEdit][1][1])/60,2)}')
 maximumVelocity = Button((750, 200), f"Max Velocity: {maxVel}%")
 compute = Button((800, 400),"Compute")
+
+# Run until program is finished
 while run:
     WIN.fill("black")
     WIN.blit(bg, (0, 0))
+    # Draw handle lines
     pygame.draw.lines(WIN, (255, 255, 255), False, splinePoints, width=3)
 
+    # Render text and buttons
     xVal.setText(f'x: {round(points[coordinateEdit][1][0]/60,2)}')
     xVal.render()
 
@@ -341,6 +353,7 @@ while run:
 
     compute.render()
 
+    # Draw the circles
     for i in range(len(points)):
         for a in range(3):
             if a == 0 or a == 2:
@@ -351,13 +364,17 @@ while run:
         pygame.draw.line(WIN, "white", points[i][0], points[i][1], width=2)
         pygame.draw.line(WIN, "white", points[i][2], points[i][1], width=2)
 
+    # Get mouse coordinates
     x = pygame.mouse.get_pos()[0]
     y = pygame.mouse.get_pos()[1]
 
+    # Check the events
     for event in pygame.event.get():
+        # Quit
         if event.type == pygame.QUIT:
             run = False
 
+        # Check if any of the points were clicked
         if event.type == pygame.MOUSEBUTTONDOWN:
             if event.button == 1:
                 for i in range(len(points)):
@@ -368,6 +385,48 @@ while run:
                             iVal = i
                             coordinateEdit = i
 
+        # Drag the button along the mouse
+        if event.type == pygame.MOUSEMOTION:
+            if activeCircle!=None:
+                if aVal == 1:
+                    # Move the waypoint and the handles
+                    points[iVal][0][0]+=x-points[iVal][1][0]
+                    points[iVal][0][1]+=y-points[iVal][1][1]
+
+                    points[iVal][2][0]+=x-points[iVal][1][0]
+                    points[iVal][2][1]+=y-points[iVal][1][1]
+
+                    points[iVal][1][0] = x
+                    points[iVal][1][1] = y
+                    
+                    adjacentCompute(iVal, points)
+                else:
+                    # If there's only one handle set the value of both handles to the same
+                    if points[iVal][3] == False:
+                        points[iVal][0][0] = x
+                        points[iVal][0][1] = y
+
+                        points[iVal][2][0] = x
+                        points[iVal][2][1] = y
+                    else:
+                        # Translate the opposite handles correctly
+                        if aVal == 0:
+                            points[iVal][0][0] = x
+                            points[iVal][0][1] = y
+
+                            points[iVal][2][0] = points[iVal][1][0]+(points[iVal][1][0]-x)
+                            points[iVal][2][1] = points[iVal][1][1]+(points[iVal][1][1]-y)
+                        else:
+                            points[iVal][2][0] = x
+                            points[iVal][2][1] = y
+
+                            points[iVal][0][0] = points[iVal][1][0]+(points[iVal][1][0]-x)
+                            points[iVal][0][1] = points[iVal][1][1]+(points[iVal][1][1]-y)
+
+                    # Recompute the spline after the points are moved
+                    adjacentCompute(iVal, points)
+
+        # Check if any of the buttons were clicked
         if xVal.click():
             xChange = True
 
@@ -385,58 +444,13 @@ while run:
 
         if velChange and event.type == pygame.KEYDOWN:
             setVel+=event.unicode
-
-        if event.type == pygame.MOUSEMOTION:
-            if activeCircle!=None:
-                if aVal == 1:
-                    points[iVal][0][0]+=x-points[iVal][1][0]
-                    points[iVal][0][1]+=y-points[iVal][1][1]
-
-                    points[iVal][2][0]+=x-points[iVal][1][0]
-                    points[iVal][2][1]+=y-points[iVal][1][1]
-
-                    points[iVal][1][0] = x
-                    points[iVal][1][1] = y
-                    
-                    adjacentCompute(iVal, points)
-                else:
-                    if points[iVal][3] == False:
-                        points[iVal][0][0] = x
-                        points[iVal][0][1] = y
-
-                        points[iVal][2][0] = x
-                        points[iVal][2][1] = y
-                    else:
-                        if aVal == 0:
-                            points[iVal][0][0] = x
-                            points[iVal][0][1] = y
-
-                            points[iVal][2][0] = points[iVal][1][0]+(points[iVal][1][0]-x)
-                            points[iVal][2][1] = points[iVal][1][1]+(points[iVal][1][1]-y)
-                        else:
-                            points[iVal][2][0] = x
-                            points[iVal][2][1] = y
-
-                            points[iVal][0][0] = points[iVal][1][0]+(points[iVal][1][0]-x)
-                            points[iVal][0][1] = points[iVal][1][1]+(points[iVal][1][1]-y)
-
-                    adjacentCompute(iVal, points)
-
+        
         if compute.click():
             trajectoryCalc(maxVel, accel)
         if event.type == pygame.MOUSEBUTTONUP:
             activeCircle=None
-    
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_n:
-                points.append([[x, y-100], [x,y], [x, y-100], False])
-                points[len(points)-2][3] = True
-
-                points[len(points)-2][2][0] = points[len(points)-2][1][0]+(points[len(points)-2][1][0]-points[len(points)-2][0][0])
-                points[len(points)-2][2][1] = points[len(points)-2][1][1]+(points[len(points)-2][1][1]-points[len(points)-2][0][1])
-
-                newCompute(points[len(points)-2][1], points[len(points)-2][2], points[len(points)-1][0], points[len(points)-1][1])
-
+        
+        # Set the values after coordinates and velocity are set
         if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
             if xChange:
                 points[coordinateEdit][1][0] = float(setX)*60
@@ -454,6 +468,19 @@ while run:
                 maxVel = int(setVel)
                 setVel = ""
                 velChange = False
+
+        # Create a new point when n key gets pressed
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_n:
+                points.append([[x, y-100], [x,y], [x, y-100], False])
+                points[len(points)-2][3] = True
+
+                points[len(points)-2][2][0] = points[len(points)-2][1][0]+(points[len(points)-2][1][0]-points[len(points)-2][0][0])
+                points[len(points)-2][2][1] = points[len(points)-2][1][1]+(points[len(points)-2][1][1]-points[len(points)-2][0][1])
+
+                newCompute(points[len(points)-2][1], points[len(points)-2][2], points[len(points)-1][0], points[len(points)-1][1])
+
+    
 
 
     pygame.display.flip()
