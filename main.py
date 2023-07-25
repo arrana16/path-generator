@@ -194,10 +194,10 @@ def curvatureCalc(t, P0, P1, P2, P3):
 
 # Calculate trajectory 
 def trajectoryCalc(maxVel, accel):
+    global timeStamps, angularVel, linearVel
     timeStamps = []
     angularVel = []
     linearVel = []
-
     # Telemetry variables (t=spline interval, tim = time in seconds, s = distance travelled, ts = distance travelled in segment, dT = time interval)
     t = 0
     tim = 0
@@ -263,9 +263,6 @@ def trajectoryCalc(maxVel, accel):
         linearVel.append(v)
 
     # Graph linear and angular vel
-    path.write(str(len(linearVel))+"\n")
-    path.write(str(linearVel)+"\n")
-    path.write(str(angularVel)+"\n")
     graphVel(timeStamps, linearVel, angularVel)
 
 # Plot angular and linear velocity
@@ -283,12 +280,14 @@ def graphVel(t, v, w):
 print("Enter a name for your path")
 name = input()
 
-path = open(f"paths/{name}.txt", "w")
 # CONSTANTS
 maxAngularVel = 7.363
 maxLinVel = 76.576
 accel = 1.5
 maxVel = 100
+
+# Data points
+
 
 # Render window
 WIDTH, HEIGHT = 1020, 720
@@ -335,7 +334,8 @@ setVel = ""
 xVal = Button((750, 80), f'x: {round(points[coordinateEdit][1][0]/60,2)}')
 yVal = Button((750, 110), f'y: {round((720-points[coordinateEdit][1][1])/60,2)}')
 maximumVelocity = Button((750, 200), f"Max Velocity: {maxVel}%")
-compute = Button((800, 400),"Compute")
+compute = Button((810, 400),"Compute")
+save = Button((790, 600), "Save and exit")
 
 # Run until program is finished
 while run:
@@ -361,6 +361,7 @@ while run:
     maximumVelocity.render()
 
     compute.render()
+    save.render()
 
     # Draw the circles
     for i in range(len(points)):
@@ -456,8 +457,16 @@ while run:
         
         if compute.click():
             trajectoryCalc(maxVel, accel)
+
         if event.type == pygame.MOUSEBUTTONUP:
             activeCircle=None
+
+        if save.click():
+            path = open(f"paths/{name}.txt", "w")
+            path.write(str(len(linearVel))+"\n")
+            path.write(str(linearVel)+"\n")
+            path.write(str(angularVel)+"\n")
+            run = False
         
         # Set the values after coordinates and velocity are set
         if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
