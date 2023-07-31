@@ -67,6 +67,14 @@ def reCompute(P0, P1, P2, P3, startVal):
         y = valueCalculate(t, P0[1], P1[1], P2[1], P3[1])
         splinePoints[i+startVal] = (x,y)
 
+def distCompute():
+    for i in range(len(points)-1):
+        for a in range(0, 10000):
+            t = a/10000
+            x = valueCalculate(t, points[i][1][0], points[i][2][0], points[i+1][0][0], points[i+1][1][0])
+            y = valueCalculate(t, points[i][1][1], points[i][2][1], points[i+1][0][1], points[i+1][1][1])
+            distPoints.append((x,y))
+
 # Determine how to recompute spline
 def adjacentCompute(iVal, points):
     # If the point moving has 2 adjacent points, recompute the segments between all 3 points
@@ -82,23 +90,25 @@ def adjacentCompute(iVal, points):
     else:
         reCompute(points[iVal][1], points[iVal][2], points[iVal+1][0], points[iVal+1][1], iVal*1000)
 
+    
 # Calculate the distance of the spline
 def distanceCalc():
+    global distPoints
     totaldistance = 0
     segmentDistance = []
-
+    distPoints = []
+    distCompute()
     # Go through the spline points amnd determine the distance travelled
-    for i in range(len(splinePoints)-1):
-        segLength = math.sqrt((splinePoints[i][0]-splinePoints[i+1][0])**2+(splinePoints[i][1]-splinePoints[i+1][1])**2)
+    for i in range(len(distPoints)-1):
+        segLength = math.sqrt((distPoints[i][0]-distPoints[i+1][0])**2+(distPoints[i][1]-distPoints[i+1][1])**2)
         totaldistance+=segLength
 
         # If the segment is completed, add its value to segmentDistance
-        if (i+2)%1000==0:
+        if (i+2)%10000==0:
             segmentDistance.append((totaldistance/60))
 
     # Convert to feet
-    totaldistance /= 60
-
+    totaldistance/=60
     # Go through the segments and make calculate indiivdiual segment length
     for i in range(1, len(segmentDistance)):
         segmentDistance[-i] = segmentDistance[-i]-segmentDistance[-i-1]
@@ -106,32 +116,31 @@ def distanceCalc():
 
 # Generate linear velocity
 def linVelGen(distance, maxDistance, maxVel):
+    initialVel = 0.5
+    acceleration = 100
 
-    # Determine the slope and maximum velocity
-    slope = (maxLinVel-1)/accel
+   # Determine the slope and maximum velocity
+    slope = (maxLinVel-3)/accel
     maxVel = maxLinVel*(maxVel/100)
 
     # Determine how far the robot needs to go to reach the maximum velocity
-    accelDistance = (maxVel-1)/slope
-
-    max = True
+    accelDistance = (maxVel**2-initialVel)/(2*acceleration)/12
 
     # If the segment is too small, follow a triangular profile
     if accelDistance*2>maxDistance:
         accelDistance = maxDistance/2
-        maxVel = slope*accelDistance+1
 
     # First part of trapezoid (accelerating)
     if distance<accelDistance:
-        velocity = distance*slope+1
+        velocity = math.sqrt(initialVel**2 + 2*acceleration*(distance*12))
     
     # Middle part of trapepzoid (steady velocity)
-    elif accelDistance<distance<maxDistance-accelDistance and max:
+    elif accelDistance<distance<maxDistance-accelDistance:
         velocity = maxVel
     
     # End of trapezoid (decelerating)
     else:
-        velocity = maxVel+(maxDistance-accelDistance-distance)*slope
+        velocity = math.sqrt(initialVel**2 - 2*acceleration*((distance-maxDistance)*12))
 
     return velocity
 
@@ -193,17 +202,18 @@ def curvatureCalc(t, P0, P1, P2, P3):
     return curvature
 
 # Calculate trajectory 
-def trajectoryCalc(maxVel, accel):
+def trajectoryCalc(maxVel):
     global timeStamps, angularVel, linearVel
     timeStamps = []
     angularVel = []
     linearVel = []
+
     # Telemetry variables (t=spline interval, tim = time in seconds, s = distance travelled, ts = distance travelled in segment, dT = time interval)
     t = 0
     tim = 0
     s = 0
     ts = 0
-    dT = 0.010
+    dT = 0.005
 
     # Calculate total distance and segment distances
     totalDistance, segmentDistance = distanceCalc()
@@ -242,6 +252,7 @@ def trajectoryCalc(maxVel, accel):
                     w = maxLinVel/(radius+(maxLinVel/maxAngularVel))
                     v = w*radius
 
+        w = round(w, 3)
         # Calculate distance change and increment
         s+=(v*dT)/12
         ts+=(v*dT)/12
@@ -306,6 +317,9 @@ bg = pygame.image.load("Vex Field.png")
 
 # Spline points
 splinePoints = []
+
+# Points for computing spline distance
+distPoints = []
 
 # Variable for which point to mmove
 activeCircle = None
@@ -456,7 +470,7 @@ while run:
             setVel+=event.unicode
         
         if compute.click():
-            trajectoryCalc(maxVel, accel)
+            trajectoryCalc(maxVel)
 
         if event.type == pygame.MOUSEBUTTONUP:
             activeCircle=None
