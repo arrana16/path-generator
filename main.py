@@ -2,8 +2,6 @@ import pygame
 import numpy as np
 import math
 import matplotlib.pyplot as plt
-import tkinter as tk
-from tkinter import filedialog
 
 # Button Class
 class Button:
@@ -116,7 +114,7 @@ def distanceCalc():
 
 # Generate linear velocity
 def linVelGen(distance, maxDistance, maxVel):
-    initialVel = 0.5
+    initialVel = 0.1
     acceleration = 100
 
    # Determine the slope and maximum velocity
@@ -213,7 +211,7 @@ def trajectoryCalc(maxVel):
     tim = 0
     s = 0
     ts = 0
-    dT = 0.005
+    dT = 0.01
 
     # Calculate total distance and segment distances
     totalDistance, segmentDistance = distanceCalc()
@@ -270,8 +268,8 @@ def trajectoryCalc(maxVel):
         
         # Append values to telemetry lists
         timeStamps.append(tim)
-        angularVel.append(w)
-        linearVel.append(v)
+        angularVel.append(round(w, 3))
+        linearVel.append(round(v, 3))
 
     # Graph linear and angular vel
     graphVel(timeStamps, linearVel, angularVel)
@@ -345,8 +343,8 @@ velChange = False
 setVel = ""
 
 # Set x, y, velocity and compute buttons
-xVal = Button((750, 80), f'x: {round(points[coordinateEdit][1][0]/60,2)}')
-yVal = Button((750, 110), f'y: {round((720-points[coordinateEdit][1][1])/60,2)}')
+xVal = Button((750, 80), f'x: {round(points[coordinateEdit][1][0]/5,2)}')
+yVal = Button((750, 110), f'y: {round((720-points[coordinateEdit][1][1])/5,2)}')
 maximumVelocity = Button((750, 200), f"Max Velocity: {maxVel}%")
 compute = Button((810, 400),"Compute")
 save = Button((790, 600), "Save and exit")
@@ -359,10 +357,10 @@ while run:
     pygame.draw.lines(WIN, (255, 255, 255), False, splinePoints, width=3)
 
     # Render text and buttons
-    xVal.setText(f'x: {round(points[coordinateEdit][1][0]/60,2)}')
+    xVal.setText(f'x: {round(points[coordinateEdit][1][0]/5,2)}')
     xVal.render()
 
-    yVal.setText(f'y: {round((720-points[coordinateEdit][1][1])/60,2)}')
+    yVal.setText(f'y: {round((720-points[coordinateEdit][1][1])/5,2)}')
     yVal.render()
 
     pointNum = font.render(f'Point {coordinateEdit+1}', True, (255, 255, 255))
@@ -485,13 +483,13 @@ while run:
         # Set the values after coordinates and velocity are set
         if event.type == pygame.KEYDOWN and event.key == pygame.K_RETURN:
             if xChange:
-                points[coordinateEdit][1][0] = float(setX)*60
+                points[coordinateEdit][1][0] = float(setX)*5
                 setX = ""
                 adjacentCompute(coordinateEdit, points)
                 xChange = False
 
             if yChange:
-                points[coordinateEdit][1][1] = 720-float(setY)*60
+                points[coordinateEdit][1][1] = 720-float(setY)*5
                 setY = ""
                 adjacentCompute(coordinateEdit, points)
                 yChange = False
